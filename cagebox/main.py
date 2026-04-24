@@ -4,13 +4,48 @@ __version__ = "0.1.0"
 
 import argparse
 import os
+import secrets
 import sys
 
+import uvicorn
 from fastmcp import FastMCP
 from fastmcp.server.lifespan import lifespan
-from starlette.responses import PlainTextResponse
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, Response
 
 from .tools import register_tools
+
+
+class BearerAuthMiddleware(BaseHTTPMiddleware):
+    """Validate Bearer token on every HTTP request except /health."""
+
+    def __init__(self, app, token: str):
+        super().__init__(app)
+        self._token = token
+
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path == "/health":
+            return await call_next(request)
+
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return Response(
+                "Unauthorized",
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        provided = auth_header[len("Bearer "):]
+        if not secrets.compare_digest(provided.encode(), self._token.encode()):
+            return Response(
+                "Unauthorized",
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return await call_next(request)
 
 
 def create_app_lifespan(workspace_root):
@@ -52,9 +87,17 @@ def main():
         default=8000,
         help="Port to bind to (default: 8000)"
     )
-    
+    parser.add_argument(
+        "--auth-token",
+        default=None,
+        help="Bearer token required for all requests (overrides CAGEBOX_AUTH_TOKEN env var)"
+    )
+
     args = parser.parse_args()
-    
+
+    # Resolve auth token: CLI flag takes precedence over env var
+    auth_token = args.auth_token or os.environ.get("CAGEBOX_AUTH_TOKEN")
+
     # Resolve and validate workspace root
     workspace_root = os.path.abspath(args.workspace)
     
@@ -85,15 +128,17 @@ def main():
     
     # Create lifespan with workspace_root
     app_lifespan = create_app_lifespan(workspace_root)
-    
+
     # Run the server
     try:
         if args.transport == "http":
-            mcp.run(
-                transport="http",
-                host=args.host,
-                port=args.port,
-            )
+            middleware = []
+            if auth_token:
+                middleware.append(Middleware(BearerAuthMiddleware, token=auth_token))
+                print("Authentication enabled", file=sys.stderr)
+
+            asgi_app = mcp.http_app(middleware=middleware)
+            uvicorn.run(asgi_app, host=args.host, port=args.port)
         else:
             mcp.run()
     except KeyboardInterrupt:

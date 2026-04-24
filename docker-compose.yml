@@ -11,6 +11,7 @@ services:
     environment:
       CAGEBOX_PORT: 8000
       CAGEBOX_HOST: 0.0.0.0
+      CAGEBOX_AUTH_TOKEN: ${CAGEBOX_AUTH_TOKEN:-}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s

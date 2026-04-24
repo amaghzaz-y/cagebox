@@ -62,6 +62,52 @@ volumes:
 |---|---|---|
 | `CAGEBOX_HOST` | `0.0.0.0` | Host the server binds to |
 | `CAGEBOX_PORT` | `8000` | Port the server listens on |
+| `CAGEBOX_AUTH_TOKEN` | _(none)_ | Bearer token clients must send — see [Authentication](#authentication) |
+
+---
+
+## Authentication
+
+By default cagebox accepts all requests. To restrict access, set a Bearer token.
+
+**With Docker Compose** — pass the token as an environment variable before starting the stack:
+
+```bash
+CAGEBOX_AUTH_TOKEN=mysecrettoken docker compose up -d
+```
+
+**Running locally** — use the env var or the `--auth-token` flag:
+
+```bash
+# env var
+CAGEBOX_AUTH_TOKEN=mysecrettoken uv run cagebox
+
+# CLI flag (takes precedence over env var)
+uv run cagebox --auth-token mysecrettoken
+```
+
+When a token is set, every MCP request must include the header:
+
+```
+Authorization: Bearer mysecrettoken
+```
+
+Requests without a valid token receive `401 Unauthorized`. The `/health` endpoint is always unauthenticated.
+
+**Configuring your MCP client** — add the header in your client config, e.g. for Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "cagebox": {
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "Authorization": "Bearer mysecrettoken"
+      }
+    }
+  }
+}
+```
 
 ---
 
@@ -146,7 +192,7 @@ uv run cagebox /path/to/your/workspace
 **Options:**
 
 ```
-uv run cagebox [workspace] [--transport http|stdio] [--host HOST] [--port PORT]
+uv run cagebox [workspace] [--transport http|stdio] [--host HOST] [--port PORT] [--auth-token TOKEN]
 ```
 
 | Flag | Default | Description |
@@ -155,6 +201,7 @@ uv run cagebox [workspace] [--transport http|stdio] [--host HOST] [--port PORT]
 | `--transport` | `http` | Use `http` for network clients, `stdio` for local pipe |
 | `--host` | `127.0.0.1` | Bind address |
 | `--port` | `8000` | Port |
+| `--auth-token` | _(none)_ | Bearer token to require on all requests (overrides `CAGEBOX_AUTH_TOKEN`) |
 
 ---
 
