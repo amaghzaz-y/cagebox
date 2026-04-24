@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# uv
+.uv/
+uv.lock
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# mypy / pyright / ruff
+.mypy_cache/
+.dmypy.json
+dmypy.json
+pyrightconfig.json
+.ruff_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.docker/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Workspace runtime data
+workspace/*
+!workspace/.gitkeep
