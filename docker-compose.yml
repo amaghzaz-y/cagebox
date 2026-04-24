@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./workspace:/workspace
+      - workspace:/workspace
     environment:
       CAGEBOX_PORT: 8000
       CAGEBOX_HOST: 0.0.0.0
@@ -18,3 +18,6 @@ services:
       retries: 3
       start_period: 5s
     restart: unless-stopped
+
+volumes:
+  workspace:

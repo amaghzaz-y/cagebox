@@ -20,6 +20,7 @@ RUN apt-get update \
     ripgrep \
     jq \
     unzip \
+    git \
     && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL https://bun.sh/install | BUN_INSTALL="/root/.bun" bash \
     && ln -sf /root/.bun/bin/bun /usr/local/bin/bun
